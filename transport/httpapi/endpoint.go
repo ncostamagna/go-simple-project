@@ -2,9 +2,12 @@ package httpapi
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
+
+	"github.com/google/uuid"
 )
 
 type (
@@ -25,35 +28,55 @@ func MakePostsEndpoints() Endpoints {
 
 func makeGet() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res := domain.Title{
-			Name: "exaple1",
+		id := c.Param("id") 
+
+		dbMu.Lock()
+		defer dbMu.Unlock()
+
+		for _, title := range database {
+			if title.ID == id {
+				c.JSON(http.StatusOK, gin.H{"data": title})
+				return
+			}
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": res})
+		c.JSON(http.StatusNotFound, gin.H{"error": "title not found"})
 	}
 }
 
 func makeGetAll() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res := []domain.Title{{
-			Name: "exaple1",
-		},
-			{
-				Name: "exaple2",
-			},
-		}
 
-		c.JSON(http.StatusOK, gin.H{"data": res})
+		dbMu.Lock()
+		defer dbMu.Unlock()
+
+		c.JSON(http.StatusOK, gin.H{"data": database})
 	}
 }
 
+var (
+	database []domain.Title
+	dbMu sync.Mutex
+)
+
 func makeStore() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		res := domain.Title{
-			Name:        "exaple1",
-			Description: "desc1",
+		var req domain.Title
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON: " + err.Error()})
+			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": res})
+		if req.Name == "" || req.Description == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Name and Description are required"})
+				return
+		}
+		req.ID = uuid.NewString()
+
+		dbMu.Lock()
+		database = append(database, req)
+		dbMu.Unlock()
+
+	    c.JSON(http.StatusOK, gin.H{"data": req})
 	}
 }
