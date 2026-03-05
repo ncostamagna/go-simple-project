@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/ncostamagna/go-simple-project/service"
 	"github.com/ncostamagna/go-simple-project/transport/httpapi"
 )
 
 func main() {
 
-	endpoints := httpapi.MakePostsEndpoints()
+	srv := service.New()
+
+	endpoints := httpapi.MakePostsEndpoints(srv)
+	
 	apiServer := httpapi.New(endpoints)
 
 	errs := make(chan error, 1)

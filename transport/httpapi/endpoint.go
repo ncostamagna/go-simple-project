@@ -2,12 +2,10 @@ package httpapi
 
 import (
 	"net/http"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
-
-	"github.com/google/uuid"
+	"github.com/ncostamagna/go-simple-project/service"
 )
 
 type (
@@ -18,48 +16,41 @@ type (
 	}
 )
 
-func MakePostsEndpoints() Endpoints {
+func MakePostsEndpoints(s service.Service) Endpoints {
 	return Endpoints{
-		Get:    makeGet(),
-		GetAll: makeGetAll(),
-		Store:  makeStore(),
+		Get:    makeGet(s),
+		GetAll: makeGetAll(s),
+		Store:  makeStore(s),
 	}
 }
 
-func makeGet() gin.HandlerFunc {
+func makeGet(s service.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id") 
 
-		dbMu.Lock()
-		defer dbMu.Unlock()
-
-		for _, title := range database {
-			if title.ID == id {
-				c.JSON(http.StatusOK, gin.H{"data": title})
-				return
-			}
+		title, err := s.Get(id)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "title not found"})
+			return
 		}
 
-		c.JSON(http.StatusNotFound, gin.H{"error": "title not found"})
+		c.JSON(http.StatusOK, gin.H{"data": title})
+
 	}
 }
 
-func makeGetAll() gin.HandlerFunc {
+func makeGetAll(s service.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		dbMu.Lock()
-		defer dbMu.Unlock()
+		titles := s.GetAll()
 
-		c.JSON(http.StatusOK, gin.H{"data": database})
+		c.JSON(http.StatusOK, gin.H{"data": titles})
 	}
 }
 
-var (
-	database []domain.Title
-	dbMu sync.Mutex
-)
 
-func makeStore() gin.HandlerFunc {
+
+func makeStore(s service.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req domain.Title
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,16 +58,11 @@ func makeStore() gin.HandlerFunc {
 			return
 		}
 
-		if req.Name == "" || req.Description == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Name and Description are required"})
-				return
+		res, err := s.Store(req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
-		req.ID = uuid.NewString()
-
-		dbMu.Lock()
-		database = append(database, req)
-		dbMu.Unlock()
-
-	    c.JSON(http.StatusOK, gin.H{"data": req})
+	    c.JSON(http.StatusOK, gin.H{"data": res})
 	}
 }
