@@ -2,6 +2,8 @@ package httpapi
 
 import (
 	"net/http"
+	"errors"
+	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
@@ -30,29 +32,22 @@ func makeGet(s title.Service) gin.HandlerFunc {
 
 		result, err := s.Get(id)
 		if err != nil {
-			if err == title.ErrNoTitlesInDatabase {
+			if errors.Is(err, title.ErrNoTitlesInDatabase) {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			if errors.Is(err, title.ErrTitleNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 				return
 			}
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
-
 		c.JSON(http.StatusOK, gin.H{"data": result})
-
 	}
 }
-
-func makeGetAll(s title.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		titles := s.GetAll()
-
-		c.JSON(http.StatusOK, gin.H{"data": titles})
-	}
-}
-
-
 
 func makeStore(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
