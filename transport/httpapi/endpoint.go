@@ -28,13 +28,17 @@ func makeGet(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id") 
 
-		title, err := s.Get(id)
+		result, err := s.Get(id)
 		if err != nil {
+			if err == title.ErrNoTitlesInDatabase {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"data": title})
+		c.JSON(http.StatusOK, gin.H{"data": result})
 
 	}
 }
