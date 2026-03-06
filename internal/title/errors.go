@@ -4,4 +4,6 @@ import "errors"
 
 var ErrTitleNotFound = errors.New("title not found")
 var ErrNameAndDescriptionRequired = errors.New("name and description are required")
+var ErrNoTitlesInDatabase = errors.New("no titles in database")
+
 

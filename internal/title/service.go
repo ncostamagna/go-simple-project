@@ -49,6 +49,11 @@ func (s *service) GetAll() []domain.Title {
 
 func (s *service) Get(id string) (domain.Title, error) {
 
+
+	if len(s.database) == 0 {
+		return domain.Title{}, ErrNoTitlesInDatabase
+	}
+
 	for _, title := range s.database {
 		if title.ID == id {
 			return title, nil
