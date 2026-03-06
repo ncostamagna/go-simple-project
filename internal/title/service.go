@@ -1,7 +1,6 @@
-package service
+package title
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/google/uuid"
@@ -30,7 +29,7 @@ func New() Service {
 func (s *service) Store(title domain.Title) (domain.Title, error) {
 
 	if title.Name == "" || title.Description == "" {
-		return domain.Title{}, errors.New("name and description are required")
+		return domain.Title{}, ErrNameAndDescriptionRequired
 	}
 
 	title.ID = uuid.NewString()
@@ -56,5 +55,5 @@ func (s *service) Get(id string) (domain.Title, error) {
 		}
 	}
 
-	return domain.Title{}, errors.New("title not found")
+	return domain.Title{}, ErrTitleNotFound
 }

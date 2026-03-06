@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
-	"github.com/ncostamagna/go-simple-project/service"
+	"github.com/ncostamagna/go-simple-project/internal/title"
 )
 
 type (
@@ -16,7 +16,7 @@ type (
 	}
 )
 
-func MakePostsEndpoints(s service.Service) Endpoints {
+func MakePostsEndpoints(s title.Service) Endpoints {
 	return Endpoints{
 		Get:    makeGet(s),
 		GetAll: makeGetAll(s),
@@ -24,13 +24,13 @@ func MakePostsEndpoints(s service.Service) Endpoints {
 	}
 }
 
-func makeGet(s service.Service) gin.HandlerFunc {
+func makeGet(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id") 
 
 		title, err := s.Get(id)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "title not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
 		}
 
@@ -39,7 +39,7 @@ func makeGet(s service.Service) gin.HandlerFunc {
 	}
 }
 
-func makeGetAll(s service.Service) gin.HandlerFunc {
+func makeGetAll(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		titles := s.GetAll()
@@ -50,7 +50,7 @@ func makeGetAll(s service.Service) gin.HandlerFunc {
 
 
 
-func makeStore(s service.Service) gin.HandlerFunc {
+func makeStore(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req domain.Title
 		if err := c.ShouldBindJSON(&req); err != nil {
