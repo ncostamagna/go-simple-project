@@ -31,18 +31,15 @@ func makeGet(s title.Service) gin.HandlerFunc {
 		id := c.Param("id") 
 
 		result, err := s.Get(id)
+
 		if err != nil {
-			if errors.Is(err, title.ErrNoTitlesInDatabase) {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-				return
-			}
 
 			if errors.Is(err, title.ErrTitleNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 				return
 			}
 
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"data": result})
