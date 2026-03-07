@@ -3,7 +3,6 @@ package httpapi
 import (
 	"net/http"
 	"errors"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
@@ -42,6 +41,14 @@ func makeGet(s title.Service) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		c.JSON(http.StatusOK, gin.H{"data": result})
+	}
+}
+
+func makeGetAll(s title.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		
+		result := s.GetAll()
 		c.JSON(http.StatusOK, gin.H{"data": result})
 	}
 }

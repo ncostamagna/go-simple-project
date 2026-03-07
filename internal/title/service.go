@@ -1,11 +1,8 @@
 package title
 
 import (
-	"sync"
-
-	"github.com/google/uuid"
 	"github.com/ncostamagna/go-simple-project/domain"
-
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -14,14 +11,19 @@ type Service interface {
 	Get(id string) (domain.Title, error)
 }
 
-type service struct {
-	database []domain.Title
-	dbMu sync.Mutex
+type Repository interface {
+	Store(title domain.Title) (domain.Title, error)
+	GetAll() []domain.Title
+	Get(id string) (domain.Title, error)
 }
 
-func New() Service {
+type service struct {
+	repo Repository
+}
+
+func NewService(r Repository) Service {
 	return &service{
-		database: make([]domain.Title, 0),
+		repo: r,
 	}
 }
 
@@ -34,31 +36,16 @@ func (s *service) Store(title domain.Title) (domain.Title, error) {
 
 	title.ID = uuid.NewString()
 
-	s.dbMu.Lock()
-	s.database = append(s.database, title)
-	s.dbMu.Unlock()
-
-	return title, nil
+	return s.repo.Store(title)
 
 }
 
 func (s *service) GetAll() []domain.Title {
 
-	return s.database
+	return s.repo.GetAll()
 }
 
 func (s *service) Get(id string) (domain.Title, error) {
 
-
-	if len(s.database) == 0 {
-		return domain.Title{}, ErrNoTitlesInDatabase
-	}
-
-	for _, title := range s.database {
-		if title.ID == id {
-			return title, nil
-		}
-	}
-
-	return domain.Title{}, ErrTitleNotFound
+	return s.repo.Get(id)
 }
