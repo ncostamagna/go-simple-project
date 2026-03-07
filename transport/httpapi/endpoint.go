@@ -33,7 +33,7 @@ func makeGet(s title.Service) gin.HandlerFunc {
 
 		if err != nil {
 
-			if errors.Is(err, title.ErrTitleNotFound) {
+			if errors.Is(err, title.ErrTitleNotFoundTitle) {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 				return
 			}

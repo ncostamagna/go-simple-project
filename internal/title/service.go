@@ -1,6 +1,9 @@
 package title
 
 import (
+	"errors"
+	
+	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/google/uuid"
 )
@@ -11,19 +14,14 @@ type Service interface {
 	Get(id string) (domain.Title, error)
 }
 
-type Repository interface {
-	Store(title domain.Title) (domain.Title, error)
-	GetAll() []domain.Title
-	Get(id string) (domain.Title, error)
-}
 
 type service struct {
-	repo Repository
+	db memorydb.MemoryDB
 }
 
-func NewService(r Repository) Service {
+func NewService(db memorydb.MemoryDB) Service {
 	return &service{
-		repo: r,
+		db: db,
 	}
 }
 
@@ -36,16 +34,24 @@ func (s *service) Store(title domain.Title) (domain.Title, error) {
 
 	title.ID = uuid.NewString()
 
-	return s.repo.Store(title)
+	return s.db.Store(title)
 
 }
 
 func (s *service) GetAll() []domain.Title {
 
-	return s.repo.GetAll()
+	return s.db.GetAll()
 }
 
 func (s *service) Get(id string) (domain.Title, error) {
 
-	return s.repo.Get(id)
+	title, err := s.db.Get(id)
+	if err != nil {
+		if errors.Is(err, memorydb.ErrTitleNotFoundAdapter) {
+			return domain.Title{}, ErrTitleNotFoundTitle
+		}
+		return domain.Title{}, err
+	}
+
+	return title, nil
 }

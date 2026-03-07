@@ -4,21 +4,26 @@ import (
 	"sync"
 
 	"github.com/ncostamagna/go-simple-project/domain"
-	"github.com/ncostamagna/go-simple-project/internal/title"
 )
 
-type repository struct {
+type MemoryDB interface {
+	Store(title domain.Title) (domain.Title, error)
+	GetAll() []domain.Title
+	Get(id string) (domain.Title, error)
+}
+
+type memoryDB struct {
 	database []domain.Title
 	dbMu sync.Mutex
 }
 
-func New() title.Repository {
-	return &repository{
+func New() MemoryDB {
+	return &memoryDB{
 		database: make([]domain.Title, 0),
 	}
 }
 
-func (r *repository) Store(title domain.Title) (domain.Title, error) {
+func (r *memoryDB) Store(title domain.Title) (domain.Title, error) {
 
 	r.dbMu.Lock()
 	defer r.dbMu.Unlock()
@@ -28,19 +33,16 @@ func (r *repository) Store(title domain.Title) (domain.Title, error) {
 	return title, nil
 }
 
-func (r *repository) GetAll() []domain.Title {
+func (r *memoryDB) GetAll() []domain.Title {
 
-	result := make([]domain.Title, len(r.database))
-	copy(result, r.database)
-	
-	return result
+	return r.database
 }
 
-func (r *repository) Get(id string) (domain.Title, error) {
+func (r *memoryDB) Get(id string) (domain.Title, error) {
 
 
 	if len(r.database) == 0 {
-		return domain.Title{}, title.ErrNoTitlesInDatabase
+		return domain.Title{}, ErrNoTitlesInDatabase
 	}
 
 	for _, title := range r.database {
@@ -49,5 +51,5 @@ func (r *repository) Get(id string) (domain.Title, error) {
 		}
 	}
 
-	return domain.Title{}, title.ErrTitleNotFound
+	return domain.Title{}, ErrTitleNotFoundAdapter
 }
