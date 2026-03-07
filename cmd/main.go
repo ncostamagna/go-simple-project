@@ -6,11 +6,14 @@ import (
 
 	"github.com/ncostamagna/go-simple-project/internal/title"
 	"github.com/ncostamagna/go-simple-project/transport/httpapi"
+	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
 )
 
 func main() {
 
-	srv := title.New()
+	repo := memorydb.New()
+
+	srv := title.NewService(repo)
 
 	endpoints := httpapi.MakePostsEndpoints(srv)
 	
@@ -25,5 +28,5 @@ func main() {
 	}()
 
 	<-errs
-	log.Println("end program")
+	log.Println("end program", errs)
 }

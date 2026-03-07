@@ -1,11 +1,11 @@
 package title
 
 import (
-	"sync"
-
-	"github.com/google/uuid"
+	"errors"
+	
+	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
 	"github.com/ncostamagna/go-simple-project/domain"
-
+	"github.com/google/uuid"
 )
 
 type Service interface {
@@ -14,14 +14,14 @@ type Service interface {
 	Get(id string) (domain.Title, error)
 }
 
+
 type service struct {
-	database []domain.Title
-	dbMu sync.Mutex
+	db memorydb.MemoryDB
 }
 
-func New() Service {
+func NewService(db memorydb.MemoryDB) Service {
 	return &service{
-		database: make([]domain.Title, 0),
+		db: db,
 	}
 }
 
@@ -34,31 +34,24 @@ func (s *service) Store(title domain.Title) (domain.Title, error) {
 
 	title.ID = uuid.NewString()
 
-	s.dbMu.Lock()
-	s.database = append(s.database, title)
-	s.dbMu.Unlock()
-
-	return title, nil
+	return s.db.Store(title)
 
 }
 
 func (s *service) GetAll() []domain.Title {
 
-	return s.database
+	return s.db.GetAll()
 }
 
 func (s *service) Get(id string) (domain.Title, error) {
 
-
-	if len(s.database) == 0 {
-		return domain.Title{}, ErrNoTitlesInDatabase
-	}
-
-	for _, title := range s.database {
-		if title.ID == id {
-			return title, nil
+	title, err := s.db.Get(id)
+	if err != nil {
+		if errors.Is(err, memorydb.ErrTitleNotFoundAdapter) {
+			return domain.Title{}, ErrTitleNotFoundTitle
 		}
+		return domain.Title{}, err
 	}
 
-	return domain.Title{}, ErrTitleNotFound
+	return title, nil
 }
