@@ -1,57 +1,54 @@
 package title
 
-import (
-	"errors"
-	
-	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
+import (	
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/google/uuid"
+	"github.com/ncostamagna/go-simple-project/adapter/postgres"
+	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
 )
 
+
 type Service interface {
-	Store(title domain.Title) (domain.Title, error)
+	Store(t domain.Title) (domain.Title, error)
 	GetAll() []domain.Title
 	Get(id string) (domain.Title, error)
 }
 
-
 type service struct {
-	db memorydb.MemoryDB
+	postgresRepo postgres.Repository
+	memoryRepo memorydb.Repository
 }
 
-func NewService(db memorydb.MemoryDB) Service {
+func NewService(p postgres.Repository, m memorydb.Repository) Service {
 	return &service{
-		db: db,
+		postgresRepo: p, 
+		memoryRepo: m,
 	}
 }
 
+func (s *service) Store(t domain.Title) (domain.Title, error) {
 
-func (s *service) Store(title domain.Title) (domain.Title, error) {
-
-	if title.Name == "" || title.Description == "" {
+	if t.Name == "" || t.Description == "" {
 		return domain.Title{}, ErrNameAndDescriptionRequired
 	}
 
-	title.ID = uuid.NewString()
+	t.ID = uuid.NewString()
 
-	return s.db.Store(title)
+	return s.postgresRepo.Store(t)
 
 }
 
 func (s *service) GetAll() []domain.Title {
 
-	return s.db.GetAll()
+	return s.postgresRepo.GetAll()
 }
 
 func (s *service) Get(id string) (domain.Title, error) {
 
-	title, err := s.db.Get(id)
+	t, err := s.postgresRepo.Get(id)
 	if err != nil {
-		if errors.Is(err, memorydb.ErrTitleNotFoundAdapter) {
-			return domain.Title{}, ErrTitleNotFoundTitle
-		}
-		return domain.Title{}, err
+		return domain.Title{}, ErrTitleNotFound
 	}
 
-	return title, nil
+	return t, nil
 }

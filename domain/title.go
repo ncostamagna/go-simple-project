@@ -1,7 +1,7 @@
 package domain
 
 type Title struct {
-	Name        string "name"
-	Description string "description"
-	ID          string "id"
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }

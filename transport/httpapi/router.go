@@ -4,12 +4,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func New(endpoints Endpoints) *gin.Engine {
+func New(e Endpoints) *gin.Engine {
 	app := gin.Default()
 
-	app.POST("/titles", endpoints.Store)
-	app.GET("/titles", endpoints.GetAll)
-	app.GET("/titles/:id", endpoints.Get)
+	app.POST("/titles", e.Store)
+	app.GET("/titles", e.GetAll)
+	app.GET("/titles/:id", e.Get)
 
 	return app
 }

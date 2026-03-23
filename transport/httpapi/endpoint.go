@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/ncostamagna/go-simple-project/internal/title"
+	
 )
 
 type (
@@ -22,34 +23,6 @@ func MakePostsEndpoints(s title.Service) Endpoints {
 		Get:    makeGet(s),
 		GetAll: makeGetAll(s),
 		Store:  makeStore(s),
-	}
-}
-
-func makeGet(s title.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		id := c.Param("id") 
-
-		result, err := s.Get(id)
-
-		if err != nil {
-
-			if errors.Is(err, title.ErrTitleNotFoundTitle) {
-				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-				return
-			}
-
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"data": result})
-	}
-}
-
-func makeGetAll(s title.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		
-		result := s.GetAll()
-		c.JSON(http.StatusOK, gin.H{"data": result})
 	}
 }
 
@@ -69,3 +42,32 @@ func makeStore(s title.Service) gin.HandlerFunc {
 	    c.JSON(http.StatusOK, gin.H{"data": res})
 	}
 }
+
+func makeGet(s title.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.Param("id") 
+
+		result, err := s.Get(id)
+
+		if err != nil {
+
+			if errors.Is(err, title.ErrTitleNotFound) {
+				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"data": result})
+	}
+}
+
+func makeGetAll(s title.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		
+		result := s.GetAll()
+		c.JSON(http.StatusOK, gin.H{"data": result})
+	}
+}
+
