@@ -36,6 +36,12 @@ func makeStore(s title.Service) gin.HandlerFunc {
 
 		res, err := s.Store(req)
 		if err != nil {
+
+			if errors.Is(err, title.ErrNameAndDescriptionRequired) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}

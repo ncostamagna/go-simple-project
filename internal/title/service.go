@@ -1,6 +1,7 @@
 package title
 
 import (	
+	"errors"
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/google/uuid"
 	"github.com/ncostamagna/go-simple-project/adapter/postgres"
@@ -47,7 +48,10 @@ func (s *service) Get(id string) (domain.Title, error) {
 
 	t, err := s.postgresRepo.Get(id)
 	if err != nil {
-		return domain.Title{}, ErrTitleNotFound
+		if errors.Is(err, postgres.ErrTitleNotFoundPostgres) {
+			return domain.Title{}, ErrTitleNotFound
+		}
+		return domain.Title{}, err
 	}
 
 	return t, nil

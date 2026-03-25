@@ -9,9 +9,14 @@ import (
 	"github.com/ncostamagna/go-simple-project/adapter/postgres"
 	"github.com/ncostamagna/go-simple-project/bootstrap"
 	"github.com/ncostamagna/go-simple-project/internal/title"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 
 	var repoPostgresdb postgres.Repository
 	var repoMemorydb memorydb.Repository
