@@ -3,7 +3,11 @@ package title
 import "errors"
 
 var (
-	ErrTitleNotFoundTitle = errors.New("title not found")
+	// Errores que el Servicio le lanza al mundo (HTTP)
+	ErrTitleNotFound = errors.New("title not found")
 	ErrNameAndDescriptionRequired = errors.New("name and description are required")
+
+	// Errores que el Repositorio le lanza al Servicio (Genérico)
+	ErrDBNotFound = errors.New("database: record not found")
 )
 

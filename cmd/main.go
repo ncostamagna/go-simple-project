@@ -4,29 +4,44 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ncostamagna/go-simple-project/internal/title"
-	"github.com/ncostamagna/go-simple-project/transport/httpapi"
 	"github.com/ncostamagna/go-simple-project/adapter/memorydb"
+	"github.com/ncostamagna/go-simple-project/transport/httpapi"
+	"github.com/ncostamagna/go-simple-project/adapter/postgres"
+	"github.com/ncostamagna/go-simple-project/bootstrap"
+	"github.com/ncostamagna/go-simple-project/internal/title"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
 
-	repo := memorydb.New()
+	var repoPostgresdb postgres.Repository
+	var repoMemorydb memorydb.Repository
 
-	srv := title.NewService(repo)
+	db, err := bootstrap.InitPostgres()
+	if err != nil {
+		log.Fatalf("failed to connect to Postgres: %v", err)
+	}
+
+	repoPostgresdb = postgres.NewRepository(db)
+	repoMemorydb = memorydb.NewRepository()
+
+	srv := title.NewService(repoPostgresdb, repoMemorydb)
 
 	endpoints := httpapi.MakePostsEndpoints(srv)
-	
 	apiServer := httpapi.New(endpoints)
 
 	errs := make(chan error, 1)
 
 	go func() {
-		url := fmt.Sprintf("127.0.0.1:8085")
+		url := fmt.Sprintf("0.0.0.0:8085")
 		log.Println("Listening", "url", url)
 		errs <- apiServer.Run(url)
 	}()
 
-	<-errs
-	log.Println("end program", errs)
+	fatalErr := <-errs
+	log.Println("Program ended:", fatalErr)
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/ncostamagna/go-simple-project/internal/title"
+	
 )
 
 type (
@@ -25,6 +26,29 @@ func MakePostsEndpoints(s title.Service) Endpoints {
 	}
 }
 
+func makeStore(s title.Service) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var req domain.Title
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON: " + err.Error()})
+			return
+		}
+
+		res, err := s.Store(req)
+		if err != nil {
+
+			if errors.Is(err, title.ErrNameAndDescriptionRequired) {
+				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+				return
+			}
+
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	    c.JSON(http.StatusOK, gin.H{"data": res})
+	}
+}
+
 func makeGet(s title.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := c.Param("id") 
@@ -33,7 +57,7 @@ func makeGet(s title.Service) gin.HandlerFunc {
 
 		if err != nil {
 
-			if errors.Is(err, title.ErrTitleNotFoundTitle) {
+			if errors.Is(err, title.ErrTitleNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 				return
 			}
@@ -53,19 +77,3 @@ func makeGetAll(s title.Service) gin.HandlerFunc {
 	}
 }
 
-func makeStore(s title.Service) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var req domain.Title
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON: " + err.Error()})
-			return
-		}
-
-		res, err := s.Store(req)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	    c.JSON(http.StatusOK, gin.H{"data": res})
-	}
-}
