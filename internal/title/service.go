@@ -10,9 +10,9 @@ import (
 
 
 type Service interface {
-	Store(t domain.Title) (domain.Title, error)
-	GetAll() []domain.Title
-	Get(id string) (domain.Title, error)
+	Store(t domain.Title, dbTarget string) (domain.Title, error)
+	GetAll(dbTarget string) ([]domain.Title, error)
+	Get(id string, dbTarget string) (domain.Title, error)
 }
 
 type service struct {
@@ -27,7 +27,7 @@ func NewService(p postgres.Repository, m memorydb.Repository) Service {
 	}
 }
 
-func (s *service) Store(t domain.Title) (domain.Title, error) {
+func (s *service) Store(t domain.Title, dbTarget string) (domain.Title, error) {
 
 	if t.Name == "" || t.Description == "" {
 		return domain.Title{}, ErrNameAndDescriptionRequired
@@ -35,24 +35,48 @@ func (s *service) Store(t domain.Title) (domain.Title, error) {
 
 	t.ID = uuid.NewString()
 
-	return s.postgresRepo.Store(t)
-
-}
-
-func (s *service) GetAll() []domain.Title {
-
-	return s.postgresRepo.GetAll()
-}
-
-func (s *service) Get(id string) (domain.Title, error) {
-
-	t, err := s.postgresRepo.Get(id)
-	if err != nil {
-		if errors.Is(err, postgres.ErrTitleNotFoundPostgres) {
-			return domain.Title{}, ErrTitleNotFound
+	switch dbTarget {
+		case "", "postgres":
+			return s.postgresRepo.Store(t)
+		case "memory":
+			return s.memoryRepo.Store(t)
+		default:
+			return domain.Title{}, ErrInvalidDatabaseTarget
 		}
-		return domain.Title{}, err
-	}
+}
 
-	return t, nil
+func (s *service) GetAll(dbTarget string) ([]domain.Title, error) {
+    switch dbTarget {
+		case "", "postgres":
+			return s.postgresRepo.GetAll(), nil
+		case "memory":
+			return s.memoryRepo.GetAll(), nil
+		default:
+			return []domain.Title{}, ErrInvalidDatabaseTarget
+		}
+}
+
+func (s *service) Get(id string, dbTarget string) (domain.Title, error) {
+	switch dbTarget {
+		case "", "postgres":
+			t, err := s.postgresRepo.Get(id)
+			if err != nil {
+				if errors.Is(err, postgres.ErrTitleNotFoundPostgres) {
+					return domain.Title{}, ErrTitleNotFound
+				}
+				return domain.Title{}, err
+			}
+			return t, nil
+		case "memory":
+			t, err := s.memoryRepo.Get(id)
+			if err != nil {
+				if errors.Is(err, memorydb.ErrTitleNotFoundMemoryDB) {
+					return domain.Title{}, ErrTitleNotFound
+				}
+				return domain.Title{}, err
+			}
+			return t, nil
+		default:
+			return domain.Title{}, ErrInvalidDatabaseTarget
+		}
 }
