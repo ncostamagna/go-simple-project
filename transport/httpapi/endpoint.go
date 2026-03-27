@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/ncostamagna/go-simple-project/domain"
 	"github.com/ncostamagna/go-simple-project/internal/title"
-	
+
 )
 
 type (
